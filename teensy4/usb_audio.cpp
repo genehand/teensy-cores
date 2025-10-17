@@ -48,12 +48,15 @@ struct usb_audio_features_struct AudioInputUSB::features = {0,0,FEATURE_MAX_VOLU
 extern volatile uint8_t usb_high_speed;
 static void rx_event(transfer_t *t);
 static void tx_event(transfer_t *t);
+static void status_tx_event(transfer_t *t);
 
 /*static*/ transfer_t rx_transfer __attribute__ ((used, aligned(32)));
 /*static*/ transfer_t sync_transfer __attribute__ ((used, aligned(32)));
 /*static*/ transfer_t tx_transfer __attribute__ ((used, aligned(32)));
+/*static*/ transfer_t status_transfer __attribute__ ((used, aligned(32)));
 DMAMEM static uint8_t rx_buffer[AUDIO_RX_SIZE] __attribute__ ((aligned(32)));
 DMAMEM static uint8_t tx_buffer[AUDIO_RX_SIZE] __attribute__ ((aligned(32)));
+DMAMEM static uint8_t status_buffer[AUDIO_STATUS_SIZE] __attribute__ ((aligned(32)));
 DMAMEM uint32_t usb_audio_sync_feedback __attribute__ ((aligned(32)));
 
 uint8_t usb_audio_receive_setting=0;
@@ -62,6 +65,7 @@ uint8_t usb_audio_sync_nbytes;
 uint8_t usb_audio_sync_rshift;
 
 uint32_t feedback_accumulator;
+static bool is_apple_host = false;
 
 volatile uint32_t usb_audio_underrun_count;
 volatile uint32_t usb_audio_overrun_count;
@@ -89,6 +93,11 @@ static void sync_event(transfer_t *t)
 	usb_transmit(AUDIO_SYNC_ENDPOINT, &sync_transfer);
 }
 
+static void status_tx_event(transfer_t *t)
+{
+	// This callback fires when the status interrupt transfer is complete.
+}
+
 void usb_audio_configure(void)
 {
 	printf("usb_audio_configure\n");
@@ -111,6 +120,9 @@ void usb_audio_configure(void)
 	memset(&tx_transfer, 0, sizeof(tx_transfer));
 	usb_config_tx_iso(AUDIO_TX_ENDPOINT, AUDIO_TX_SIZE, 1, tx_event);
 	tx_event(NULL);
+
+	memset(&status_transfer, 0, sizeof(status_transfer));
+	usb_config_tx(AUDIO_STATUS_ENDPOINT, AUDIO_STATUS_SIZE, 0, status_tx_event);
 }
 
 void AudioInputUSB::begin(void)
@@ -463,6 +475,12 @@ struct setup_struct {
 
 int usb_audio_get_feature(void *stp, uint8_t *data, uint32_t *datalen)
 {
+	// Apple's UAC1 driver sends a vendor-specific request with bRequest=0x81
+	// during enumeration. We can use this to detect if we are connected to a Mac.
+	if (((uint8_t*)stp)[1] == 0x81) {
+		is_apple_host = true;
+	}
+
 	struct setup_struct setup = *((struct setup_struct *)stp);
 	if (setup.bmRequestType==0xA1) { // should check bRequest, bChannel, and UnitID
 			if (setup.bCS==0x01) { // mute
@@ -498,6 +516,27 @@ int usb_audio_get_feature(void *stp, uint8_t *data, uint32_t *datalen)
 	return 0;
 }
 
+void usb_audio_send_interrupt() {
+	// https://github.com/torvalds/linux/blob/master/drivers/usb/gadget/function/f_uac1.c
+	struct uac1_status_word *msg = (struct uac1_status_word *)status_buffer;
+
+	if (is_apple_host) {
+		// macOS expects the AudioStreaming interface number as the originator.
+		msg->bStatusType = UAC1_STATUS_TYPE_IRQ_PENDING | UAC1_STATUS_TYPE_ORIG_AUDIO_CONTROL_IF;
+		msg->bOriginator = AUDIO_INTERFACE + 2;
+		// msg->bOriginator = 0x03;
+	} else {
+		// Windows and Linux expect the Feature Unit ID as the originator.
+		// msg->bStatusType = UAC1_STATUS_TYPE_IRQ_PENDING | UAC1_STATUS_TYPE_ORIG_AUDIO_STREAM_EP;
+		msg->bStatusType = UAC1_STATUS_TYPE_IRQ_PENDING | UAC1_STATUS_TYPE_ORIG_AUDIO_CONTROL_IF;
+		msg->bOriginator = 0x03; // Feature Unit ID
+	}
+
+    usb_prepare_transfer(&status_transfer, status_buffer, sizeof(struct uac1_status_word), 0);
+    arm_dcache_flush(status_buffer, sizeof(struct uac1_status_word));
+    usb_transmit(AUDIO_STATUS_ENDPOINT, &status_transfer);
+}
+
 int usb_audio_set_feature(void *stp, uint8_t *buf) 
 {
 	struct setup_struct setup = *((struct setup_struct *)stp);
@@ -520,5 +559,20 @@ int usb_audio_set_feature(void *stp, uint8_t *buf)
 	return 0;
 }
 
+// static uint32_t last_volume_notify = 0;
+
+void setUSBAudioVolume(int8_t change) {
+    int volume = AudioInputUSB::features.volume;
+    volume += change * 2;
+
+    if (volume > FEATURE_MAX_VOLUME) {
+        volume = FEATURE_MAX_VOLUME;
+    } else if (volume < 0) {
+        volume = 0;
+    }
+
+    AudioInputUSB::features.volume = volume;
+    AudioInputUSB::features.change = 1;
+}
 
 #endif // AUDIO_INTERFACE
