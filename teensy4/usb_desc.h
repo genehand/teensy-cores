@@ -751,8 +751,22 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define PRODUCT_NAME		{'T','e','e','n','s','y',' ','A','u','d','i','o'}
   #define PRODUCT_NAME_LEN	12
   #define EP0_SIZE		64
-  #define NUM_ENDPOINTS         4
+  #define NUM_ENDPOINTS         5
   #define NUM_INTERFACE		4
+
+  // #define CDC_IAD_DESCRIPTOR
+  // #define CDC_STATUS_INTERFACE	0
+  // #define CDC_DATA_INTERFACE	1	// Serial
+  // #define CDC_ACM_ENDPOINT	2
+  // #define CDC_RX_ENDPOINT       3
+  // #define CDC_TX_ENDPOINT       3
+  // #define CDC_ACM_SIZE          16
+  // #define CDC_RX_SIZE_480       512
+  // #define CDC_TX_SIZE_480       512
+  // #define CDC_RX_SIZE_12        64
+  // #define CDC_TX_SIZE_12        64
+// #define AUDIO_IAD_DESCRIPTOR  1
+
   #define SEREMU_INTERFACE      0	// Serial emulation
   #define SEREMU_TX_ENDPOINT    2
   #define SEREMU_TX_SIZE        64
@@ -760,15 +774,20 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define SEREMU_RX_ENDPOINT    2
   #define SEREMU_RX_SIZE        32
   #define SEREMU_RX_INTERVAL    2
-  #define AUDIO_INTERFACE	1	// Audio (uses 3 consecutive interfaces)
+  #define AUDIO_INTERFACE	      1	// Audio (uses 3 consecutive interfaces)
   #define AUDIO_TX_ENDPOINT     3
   #define AUDIO_TX_SIZE         180
   #define AUDIO_RX_ENDPOINT     3
   #define AUDIO_RX_SIZE         180
   #define AUDIO_SYNC_ENDPOINT	4
+  #define AUDIO_STATUS_ENDPOINT	5
+  #define AUDIO_STATUS_SIZE     2
+  #define AUDIO_STATUS_INTERVAL_HS 5 // 2^(5-1)*125us -> 2ms
+  #define AUDIO_STATUS_INTERVAL_FS 2 // 2ms
   #define ENDPOINT2_CONFIG	ENDPOINT_RECEIVE_INTERRUPT + ENDPOINT_TRANSMIT_INTERRUPT
   #define ENDPOINT3_CONFIG	ENDPOINT_RECEIVE_ISOCHRONOUS + ENDPOINT_TRANSMIT_ISOCHRONOUS
   #define ENDPOINT4_CONFIG	ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_ISOCHRONOUS
+  #define ENDPOINT5_CONFIG	ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_INTERRUPT
 
 #elif defined(USB_MIDI_AUDIO_SERIAL)
   #define VENDOR_ID		0x16C0
@@ -966,4 +985,3 @@ typedef struct {
 extern const usb_descriptor_list_t usb_descriptor_list[];
 #endif // NUM_ENDPOINTS
 #endif // USB_DESC_LIST_DEFINE
-
