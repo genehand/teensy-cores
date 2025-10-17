@@ -48,6 +48,25 @@ extern void usb_audio_receive_callback(unsigned int len);
 extern unsigned int usb_audio_transmit_callback(void);
 extern int usb_audio_set_feature(void *stp, uint8_t *buf);
 extern int usb_audio_get_feature(void *stp, uint8_t *data, uint32_t *datalen);
+void setUSBAudioVolume(int8_t change);
+void usb_audio_send_interrupt();
+
+// https://github.com/torvalds/linux/blob/master/include/uapi/linux/usb/audio.h
+/* status word format (3.7.1.1) */
+
+#define UAC1_STATUS_TYPE_ORIG_AUDIO_CONTROL_IF	0x0
+#define UAC1_STATUS_TYPE_ORIG_AUDIO_STREAM_IF	0x1
+#define UAC1_STATUS_TYPE_ORIG_AUDIO_STREAM_EP	0x2
+
+#define UAC1_STATUS_TYPE_IRQ_PENDING		    (1 << 7)
+#define UAC1_STATUS_TYPE_MEM_CHANGED		    (1 << 6)
+
+struct uac1_status_word {
+	uint8_t bStatusType;
+	uint8_t bOriginator;
+} __attribute__((packed));
+
+
 #ifdef __cplusplus
 }
 #endif
@@ -71,6 +90,7 @@ public:
 	friend void usb_audio_receive_callback(unsigned int len);
 	friend int usb_audio_set_feature(void *stp, uint8_t *buf);
 	friend int usb_audio_get_feature(void *stp, uint8_t *data, uint32_t *datalen);
+	void usb_audio_status_transmit(void);
 	static struct usb_audio_features_struct features;
 	float volume(void) {
 		if (features.mute) return 0.0;

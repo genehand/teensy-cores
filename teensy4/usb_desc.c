@@ -649,7 +649,7 @@ static uint8_t microsoft_os_compatible_id_desc[] = {
 
 #define AUDIO_INTERFACE_DESC_POS	KEYMEDIA_INTERFACE_DESC_POS+KEYMEDIA_INTERFACE_DESC_SIZE
 #ifdef  AUDIO_INTERFACE
-#define AUDIO_INTERFACE_DESC_SIZE	8 + 9+10+12+9+12+10+9 + 9+9+7+11+9+7 + 9+9+7+11+9+7+9
+#define AUDIO_INTERFACE_DESC_SIZE	8 + 9+7+10+12+9+12+10+9 + 9+9+7+11+9+7 + 9+9+7+11+9+7+9
 #else
 #define AUDIO_INTERFACE_DESC_SIZE	0
 #endif
@@ -1432,7 +1432,7 @@ PROGMEM const uint8_t usb_config_descriptor_480[CONFIG_DESC_SIZE] = {
 	4,					// bDescriptorType, 4 = INTERFACE
 	AUDIO_INTERFACE,			// bInterfaceNumber
 	0,					// bAlternateSetting
-	0,					// bNumEndpoints
+	1,					// bNumEndpoints
 	1,					// bInterfaceClass, 1 = AUDIO
 	1,					// bInterfaceSubclass, 1 = AUDIO_CONTROL
 	0,					// bInterfaceProtocol
@@ -1443,7 +1443,7 @@ PROGMEM const uint8_t usb_config_descriptor_480[CONFIG_DESC_SIZE] = {
 	0x24,					// bDescriptorType, 0x24 = CS_INTERFACE
 	0x01,					// bDescriptorSubtype, 1 = HEADER
 	0x00, 0x01,				// bcdADC (version 1.0)
-	LSB(62), MSB(62),			// wTotalLength
+	LSB(69), MSB(69),			// wTotalLength
 	2,					// bInCollection
 	AUDIO_INTERFACE+1,			// baInterfaceNr(1) - Transmit to PC
 	AUDIO_INTERFACE+2,			// baInterfaceNr(2) - Receive from PC
@@ -1487,7 +1487,7 @@ PROGMEM const uint8_t usb_config_descriptor_480[CONFIG_DESC_SIZE] = {
 	10,					// bLength
 	0x24, 				// bDescriptorType = CS_INTERFACE
 	0x06, 				// bDescriptorSubType = FEATURE_UNIT
-	0x31, 				// bUnitID
+	0x03, 				// bUnitID
 	0x03, 				// bSourceID (Input Terminal)
 	0x01, 				// bControlSize (each channel is 1 byte, 3 channels)
 	0x01, 				// bmaControls(0) Master: Mute
@@ -1503,8 +1503,16 @@ PROGMEM const uint8_t usb_config_descriptor_480[CONFIG_DESC_SIZE] = {
 	//0x02, 0x03,				// wTerminalType, 0x0302 = Headphones
 	0x02, 0x06,				// wTerminalType, 0x0602 = Digital Audio
 	0,					// bAssocTerminal, 0 = unidirectional
-	0x31,				// bCSourceID, connected to feature, ID=31
+	0x03,				// bCSourceID, connected to feature, ID=31
 	0,					// iTerminal
+        // Standard Endpoint Descriptor
+	// USB Spec 9.6.6, page 269-271, Table 9-13
+	7,					// bLength
+	5,					// bDescriptorType, ENDPOINT
+	AUDIO_STATUS_ENDPOINT | 0x80,		// bEndpointAddress (IN)
+	0x03,					// bmAttributes: Interrupt
+	AUDIO_STATUS_SIZE, 0,			// wMaxPacketSize
+	AUDIO_STATUS_INTERVAL_HS,		// bInterval for High-Speed
 	// Standard AS Interface Descriptor
 	// USB DCD for Audio Devices 1.0, Section 4.5.1, Table 4-18, page 59
 	// Alternate 0: default setting, disabled zero bandwidth
@@ -2446,7 +2454,10 @@ PROGMEM const uint8_t usb_config_descriptor_12[CONFIG_DESC_SIZE] = {
 	4,					// bDescriptorType, 4 = INTERFACE
 	AUDIO_INTERFACE,			// bInterfaceNumber
 	0,					// bAlternateSetting
-	0,					// bNumEndpoints
+	// For MacOS, the AudioControl interface must claim bNumEndpoints = 1,
+	// and the status endpoint descriptor must immediately follow all other
+	// AC interface descriptors, to resolve ambiguity.
+	1,					// bNumEndpoints
 	1,					// bInterfaceClass, 1 = AUDIO
 	1,					// bInterfaceSubclass, 1 = AUDIO_CONTROL
 	0,					// bInterfaceProtocol
@@ -2457,7 +2468,7 @@ PROGMEM const uint8_t usb_config_descriptor_12[CONFIG_DESC_SIZE] = {
 	0x24,					// bDescriptorType, 0x24 = CS_INTERFACE
 	0x01,					// bDescriptorSubtype, 1 = HEADER
 	0x00, 0x01,				// bcdADC (version 1.0)
-	LSB(62), MSB(62),			// wTotalLength
+	LSB(69), MSB(69),			// wTotalLength
 	2,					// bInCollection
 	AUDIO_INTERFACE+1,			// baInterfaceNr(1) - Transmit to PC
 	AUDIO_INTERFACE+2,			// baInterfaceNr(2) - Receive from PC
@@ -2501,7 +2512,7 @@ PROGMEM const uint8_t usb_config_descriptor_12[CONFIG_DESC_SIZE] = {
 	10,					// bLength
 	0x24, 				// bDescriptorType = CS_INTERFACE
 	0x06, 				// bDescriptorSubType = FEATURE_UNIT
-	0x31, 				// bUnitID
+	0x03, 				// bUnitID
 	0x03, 				// bSourceID (Input Terminal)
 	0x01, 				// bControlSize (each channel is 1 byte, 3 channels)
 	0x01, 				// bmaControls(0) Master: Mute
@@ -2517,8 +2528,17 @@ PROGMEM const uint8_t usb_config_descriptor_12[CONFIG_DESC_SIZE] = {
 	//0x02, 0x03,				// wTerminalType, 0x0302 = Headphones
 	0x02, 0x06,				// wTerminalType, 0x0602 = Digital Audio
 	0,					// bAssocTerminal, 0 = unidirectional
-	0x31,				// bCSourceID, connected to feature, ID=31
+	0x03,				// bCSourceID, connected to feature, ID=31
 	0,					// iTerminal
+	// Standard Endpoint Descriptor for the AudioControl Interface
+	// USB Spec 9.6.6, page 269-271, Table 9-13
+	7,					// bLength
+	5,					// bDescriptorType, ENDPOINT
+	AUDIO_STATUS_ENDPOINT | 0x80,		// bEndpointAddress (IN)
+	0x03,					// bmAttributes: Interrupt
+	AUDIO_STATUS_SIZE, 0,			// wMaxPacketSize
+	AUDIO_STATUS_INTERVAL_FS,		// bInterval for Full-Speed
+	// --- AudioStreaming Interface ---
 	// Standard AS Interface Descriptor
 	// USB DCD for Audio Devices 1.0, Section 4.5.1, Table 4-18, page 59
 	// Alternate 0: default setting, disabled zero bandwidth
