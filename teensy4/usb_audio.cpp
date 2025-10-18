@@ -520,17 +520,17 @@ void usb_audio_send_interrupt() {
 	// https://github.com/torvalds/linux/blob/master/drivers/usb/gadget/function/f_uac1.c
 	struct uac1_status_word *msg = (struct uac1_status_word *)status_buffer;
 
-	if (is_apple_host) {
+	// if (is_apple_host) {
 		// macOS expects the AudioStreaming interface number as the originator.
 		msg->bStatusType = UAC1_STATUS_TYPE_IRQ_PENDING | UAC1_STATUS_TYPE_ORIG_AUDIO_CONTROL_IF;
-		msg->bOriginator = AUDIO_INTERFACE + 2;
-		// msg->bOriginator = 0x03;
-	} else {
-		// Windows and Linux expect the Feature Unit ID as the originator.
-		// msg->bStatusType = UAC1_STATUS_TYPE_IRQ_PENDING | UAC1_STATUS_TYPE_ORIG_AUDIO_STREAM_EP;
-		msg->bStatusType = UAC1_STATUS_TYPE_IRQ_PENDING | UAC1_STATUS_TYPE_ORIG_AUDIO_CONTROL_IF;
-		msg->bOriginator = 0x03; // Feature Unit ID
-	}
+		// msg->bOriginator = AUDIO_INTERFACE + 2;
+		msg->bOriginator = 0x05;
+	// } else {
+	// 	// Windows and Linux expect the Feature Unit ID as the originator.
+	// 	msg->bStatusType = UAC1_STATUS_TYPE_IRQ_PENDING | UAC1_STATUS_TYPE_ORIG_AUDIO_STREAM_EP;
+	// 	// msg->bStatusType = UAC1_STATUS_TYPE_IRQ_PENDING | UAC1_STATUS_TYPE_ORIG_AUDIO_CONTROL_IF;
+	// 	msg->bOriginator = 0x02; // Feature Unit ID
+	// }
 
     usb_prepare_transfer(&status_transfer, status_buffer, sizeof(struct uac1_status_word), 0);
     arm_dcache_flush(status_buffer, sizeof(struct uac1_status_word));
