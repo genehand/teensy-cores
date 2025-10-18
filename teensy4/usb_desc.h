@@ -753,20 +753,6 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define EP0_SIZE		64
   #define NUM_ENDPOINTS         5
   #define NUM_INTERFACE		4
-
-  // #define CDC_IAD_DESCRIPTOR
-  // #define CDC_STATUS_INTERFACE	0
-  // #define CDC_DATA_INTERFACE	1	// Serial
-  // #define CDC_ACM_ENDPOINT	2
-  // #define CDC_RX_ENDPOINT       3
-  // #define CDC_TX_ENDPOINT       3
-  // #define CDC_ACM_SIZE          16
-  // #define CDC_RX_SIZE_480       512
-  // #define CDC_TX_SIZE_480       512
-  // #define CDC_RX_SIZE_12        64
-  // #define CDC_TX_SIZE_12        64
-// #define AUDIO_IAD_DESCRIPTOR  1
-
   #define SEREMU_INTERFACE      0	// Serial emulation
   #define SEREMU_TX_ENDPOINT    2
   #define SEREMU_TX_SIZE        64
