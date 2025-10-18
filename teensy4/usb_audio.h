@@ -52,6 +52,7 @@ void setUSBAudioVolume(int8_t change);
 void usb_audio_send_interrupt();
 
 // https://github.com/torvalds/linux/blob/master/include/uapi/linux/usb/audio.h
+// https://github.com/torvalds/linux/blob/master/drivers/usb/gadget/function/f_uac1.c
 /* status word format (3.7.1.1) */
 
 #define UAC1_STATUS_TYPE_ORIG_AUDIO_CONTROL_IF	0x0
