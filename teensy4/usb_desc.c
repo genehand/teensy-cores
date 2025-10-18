@@ -72,7 +72,7 @@
 #define LSB(n) ((n) & 255)
 #define MSB(n) (((n) >> 8) & 255)
 
-#ifdef CDC_IAD_DESCRIPTOR
+#if defined(CDC_IAD_DESCRIPTOR) || defined(USB_AUDIO)
 #ifndef DEVICE_CLASS
 #define DEVICE_CLASS 0xEF
 #endif
@@ -1487,7 +1487,7 @@ PROGMEM const uint8_t usb_config_descriptor_480[CONFIG_DESC_SIZE] = {
 	10,					// bLength
 	0x24, 				// bDescriptorType = CS_INTERFACE
 	0x06, 				// bDescriptorSubType = FEATURE_UNIT
-	0x03, 				// bUnitID
+	0x05, 				// bUnitID
 	0x03, 				// bSourceID (Input Terminal)
 	0x01, 				// bControlSize (each channel is 1 byte, 3 channels)
 	0x01, 				// bmaControls(0) Master: Mute
@@ -1503,7 +1503,7 @@ PROGMEM const uint8_t usb_config_descriptor_480[CONFIG_DESC_SIZE] = {
 	//0x02, 0x03,				// wTerminalType, 0x0302 = Headphones
 	0x02, 0x06,				// wTerminalType, 0x0602 = Digital Audio
 	0,					// bAssocTerminal, 0 = unidirectional
-	0x03,				// bCSourceID, connected to feature, ID=31
+	0x05,				// bCSourceID, connected to feature, ID=31
 	0,					// iTerminal
         // Standard Endpoint Descriptor
 	// USB Spec 9.6.6, page 269-271, Table 9-13
@@ -2512,7 +2512,7 @@ PROGMEM const uint8_t usb_config_descriptor_12[CONFIG_DESC_SIZE] = {
 	10,					// bLength
 	0x24, 				// bDescriptorType = CS_INTERFACE
 	0x06, 				// bDescriptorSubType = FEATURE_UNIT
-	0x03, 				// bUnitID
+	0x05, 				// bUnitID
 	0x03, 				// bSourceID (Input Terminal)
 	0x01, 				// bControlSize (each channel is 1 byte, 3 channels)
 	0x01, 				// bmaControls(0) Master: Mute
@@ -2528,7 +2528,7 @@ PROGMEM const uint8_t usb_config_descriptor_12[CONFIG_DESC_SIZE] = {
 	//0x02, 0x03,				// wTerminalType, 0x0302 = Headphones
 	0x02, 0x06,				// wTerminalType, 0x0602 = Digital Audio
 	0,					// bAssocTerminal, 0 = unidirectional
-	0x03,				// bCSourceID, connected to feature, ID=31
+	0x05,				// bCSourceID, connected to feature, ID=31
 	0,					// iTerminal
 	// Standard Endpoint Descriptor for the AudioControl Interface
 	// USB Spec 9.6.6, page 269-271, Table 9-13
