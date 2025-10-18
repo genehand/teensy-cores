@@ -756,10 +756,10 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define SEREMU_INTERFACE      0	// Serial emulation
   #define SEREMU_TX_ENDPOINT    2
   #define SEREMU_TX_SIZE        64
-  #define SEREMU_TX_INTERVAL    1
+  #define SEREMU_TX_INTERVAL    4
   #define SEREMU_RX_ENDPOINT    2
   #define SEREMU_RX_SIZE        32
-  #define SEREMU_RX_INTERVAL    2
+  #define SEREMU_RX_INTERVAL    4
   #define AUDIO_INTERFACE	      1	// Audio (uses 3 consecutive interfaces)
   #define AUDIO_TX_ENDPOINT     3
   #define AUDIO_TX_SIZE         180
