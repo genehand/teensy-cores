@@ -520,7 +520,7 @@ void usb_audio_send_interrupt() {
 	struct uac1_status_word *msg = (struct uac1_status_word *)status_buffer;
 
 	msg->bStatusType = UAC1_STATUS_TYPE_IRQ_PENDING | UAC1_STATUS_TYPE_ORIG_AUDIO_CONTROL_IF | UAC1_STATUS_TYPE_MEM_CHANGED;
-	msg->bOriginator = 0x05;
+	msg->bOriginator = 0x04;
 
     usb_prepare_transfer(&status_transfer, status_buffer, sizeof(struct uac1_status_word), 0);
     arm_dcache_flush(status_buffer, sizeof(struct uac1_status_word));
