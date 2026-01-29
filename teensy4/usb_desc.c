@@ -1443,7 +1443,7 @@ PROGMEM const uint8_t usb_config_descriptor_480[CONFIG_DESC_SIZE] = {
 	0x24,					// bDescriptorType, 0x24 = CS_INTERFACE
 	0x01,					// bDescriptorSubtype, 1 = HEADER
 	0x00, 0x01,				// bcdADC (version 1.0)
-	LSB(69), MSB(69),			// wTotalLength
+	LSB(62), MSB(62),			// wTotalLength (class-specific descriptors only, not endpoint)
 	2,					// bInCollection
 	AUDIO_INTERFACE+1,			// baInterfaceNr(1) - Transmit to PC
 	AUDIO_INTERFACE+2,			// baInterfaceNr(2) - Receive from PC
@@ -1502,11 +1502,11 @@ PROGMEM const uint8_t usb_config_descriptor_480[CONFIG_DESC_SIZE] = {
 	5,					// bTerminalID
 	//0x02, 0x03,				// wTerminalType, 0x0302 = Headphones
 	//0x02, 0x06,				// wTerminalType, 0x0602 = Digital Audio
-        0x01, 0x03,				// wTerminalType, 0x0302 = Speaker
+        0x01, 0x03,				// wTerminalType, 0x0301 = Speaker
 	0,					// bAssocTerminal, 0 = unidirectional
 	0x04,				// bCSourceID, connected to feature, ID=04
 	0,					// iTerminal
-        // Standard Endpoint Descriptor
+        // Standard Endpoint Descriptor for status interrupt
 	// USB Spec 9.6.6, page 269-271, Table 9-13
 	7,					// bLength
 	5,					// bDescriptorType, ENDPOINT
@@ -2469,7 +2469,7 @@ PROGMEM const uint8_t usb_config_descriptor_12[CONFIG_DESC_SIZE] = {
 	0x24,					// bDescriptorType, 0x24 = CS_INTERFACE
 	0x01,					// bDescriptorSubtype, 1 = HEADER
 	0x00, 0x01,				// bcdADC (version 1.0)
-	LSB(69), MSB(69),			// wTotalLength
+	LSB(62), MSB(62),			// wTotalLength (class-specific descriptors only, not endpoint)
 	2,					// bInCollection
 	AUDIO_INTERFACE+1,			// baInterfaceNr(1) - Transmit to PC
 	AUDIO_INTERFACE+2,			// baInterfaceNr(2) - Receive from PC
@@ -2532,7 +2532,7 @@ PROGMEM const uint8_t usb_config_descriptor_12[CONFIG_DESC_SIZE] = {
 	0,					// bAssocTerminal, 0 = unidirectional
 	0x04,				// bCSourceID, connected to feature, ID=04
 	0,					// iTerminal
-	// Standard Endpoint Descriptor for the AudioControl Interface
+	// Standard Endpoint Descriptor for status interrupt
 	// USB Spec 9.6.6, page 269-271, Table 9-13
 	7,					// bLength
 	5,					// bDescriptorType, ENDPOINT

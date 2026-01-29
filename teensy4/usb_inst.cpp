@@ -59,6 +59,10 @@ usb_midi_class usbMIDI;
 usb_keyboard_class Keyboard;
 #endif
 
+#if defined(KEYMEDIA_INTERFACE) && !defined(KEYBOARD_INTERFACE)
+usb_keymedia_class KeyMedia;
+#endif
+
 #ifdef MOUSE_INTERFACE
 usb_mouse_class Mouse;
 #endif

@@ -115,3 +115,59 @@ extern usb_keyboard_class Keyboard;
 
 #endif // KEYBOARD_INTERFACE
 
+
+// ============================================================================
+// Standalone KEYMEDIA_INTERFACE support (without KEYBOARD_INTERFACE)
+// This provides a minimal API for media keys (volume, play/pause, etc.)
+// when KEYBOARD_INTERFACE is not enabled
+// ============================================================================
+
+#if defined(KEYMEDIA_INTERFACE) && !defined(KEYBOARD_INTERFACE)
+
+#include <inttypes.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void usb_keymedia_configure(void);
+void usb_keymedia_release_all(void);
+void usb_keymedia_press_key(uint16_t key);
+void usb_keymedia_release_key(uint16_t key);
+extern volatile uint8_t usb_configuration;
+
+#ifdef __cplusplus
+}
+#endif
+
+// C++ interface for standalone keymedia
+#ifdef __cplusplus
+
+// Consumer key codes (from keylayouts.h, redefined here for convenience)
+// These are the HID usage codes for Consumer Page (0x0C)
+#ifndef KEY_MEDIA_VOLUME_INC
+#define KEY_MEDIA_VOLUME_INC    0xE9
+#define KEY_MEDIA_VOLUME_DEC    0xEA
+#define KEY_MEDIA_MUTE          0xE2
+#define KEY_MEDIA_PLAY_PAUSE    0xCD
+#define KEY_MEDIA_NEXT_TRACK    0xB5
+#define KEY_MEDIA_PREV_TRACK    0xB6
+#define KEY_MEDIA_STOP          0xB7
+#endif
+
+class usb_keymedia_class
+{
+public:
+	void begin(void) { }
+	void end(void) { }
+	void press(uint16_t key) { usb_keymedia_press_key(key); }
+	void release(uint16_t key) { usb_keymedia_release_key(key); }
+	void releaseAll(void) { usb_keymedia_release_all(); }
+};
+
+extern usb_keymedia_class KeyMedia;
+
+#endif // __cplusplus
+
+#endif // KEYMEDIA_INTERFACE && !KEYBOARD_INTERFACE
+

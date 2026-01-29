@@ -37,8 +37,10 @@
 #include "debug/printf.h"
 #include "core_pins.h"
 
-#ifdef KEYBOARD_INTERFACE // defined by usb_dev.h -> usb_desc.h
+// Support either KEYBOARD_INTERFACE or standalone KEYMEDIA_INTERFACE
+#if defined(KEYBOARD_INTERFACE) || defined(KEYMEDIA_INTERFACE)
 
+#ifdef KEYBOARD_INTERFACE
 // which modifier keys are currently pressed
 // 1=left ctrl,	   2=left shift,   4=left alt,	  8=left gui
 // 16=right ctrl, 32=right shift, 64=right alt, 128=right gui
@@ -49,11 +51,6 @@ uint8_t keyboard_modifier_keys=0;
 uint8_t keyboard_keys[6]={0,0,0,0,0,0};
 #elif KEYBOARD_SIZE == 16
 uint8_t keyboard_bitmask[15]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-#endif
-
-#ifdef KEYMEDIA_INTERFACE
-uint16_t keymedia_consumer_keys[4];
-uint8_t keymedia_system_keys[3];
 #endif
 
 // protocol setting from the host.  We use exactly the same report
@@ -70,9 +67,14 @@ uint8_t keyboard_idle_count=0;
 
 // 1=num lock, 2=caps lock, 4=scroll lock, 8=compose, 16=kana
 volatile uint8_t keyboard_leds=0;
+#endif // KEYBOARD_INTERFACE
 
+#ifdef KEYMEDIA_INTERFACE
+uint16_t keymedia_consumer_keys[4];
+uint8_t keymedia_system_keys[3];
+#endif
 
-
+#ifdef KEYBOARD_INTERFACE
 static KEYCODE_TYPE unicode_to_keycode(uint16_t cpoint);
 static void write_key(KEYCODE_TYPE keycode);
 static uint8_t keycode_to_modifier(KEYCODE_TYPE keycode);
@@ -82,6 +84,8 @@ static void usb_keyboard_release_key(uint8_t key, uint8_t modifier);
 #ifdef DEADKEYS_MASK
 static KEYCODE_TYPE deadkey_to_keycode(KEYCODE_TYPE keycode);
 #endif
+#endif // KEYBOARD_INTERFACE
+
 #ifdef KEYMEDIA_INTERFACE
 static void usb_keymedia_press_consumer_key(uint16_t key);
 static void usb_keymedia_release_consumer_key(uint16_t key);
@@ -96,7 +100,7 @@ static int usb_keymedia_send(void);
 static transfer_t tx_transfer[TX_NUM] __attribute__ ((used, aligned(32)));
 DMAMEM static uint8_t txbuffer[TX_NUM * TX_BUFSIZE] __attribute__ ((aligned(32)));
 static uint8_t tx_head=0;
-#if KEYBOARD_SIZE > TX_BUFSIZE
+#if defined(KEYBOARD_INTERFACE) && KEYBOARD_SIZE > TX_BUFSIZE
 #error "Internal error, transmit buffer size is too small for keyboard endpoint"
 #endif
 #if defined(KEYMEDIA_INTERFACE) && KEYMEDIA_SIZE > TX_BUFSIZE
@@ -104,6 +108,7 @@ static uint8_t tx_head=0;
 #endif
 
 
+#ifdef KEYBOARD_INTERFACE
 void usb_keyboard_configure(void)
 {
 	memset(tx_transfer, 0, sizeof(tx_transfer));
@@ -113,8 +118,21 @@ void usb_keyboard_configure(void)
 	usb_config_tx(KEYMEDIA_ENDPOINT, KEYMEDIA_SIZE, 0, NULL);  // media keys use 8 byte packet
 #endif
 }
+#endif // KEYBOARD_INTERFACE
 
 
+// Standalone keymedia configure (when KEYMEDIA_INTERFACE defined without KEYBOARD_INTERFACE)
+#if defined(KEYMEDIA_INTERFACE) && !defined(KEYBOARD_INTERFACE)
+void usb_keymedia_configure(void)
+{
+	memset(tx_transfer, 0, sizeof(tx_transfer));
+	tx_head = 0;
+	usb_config_tx(KEYMEDIA_ENDPOINT, KEYMEDIA_SIZE, 0, NULL);  // media keys use 8 byte packet
+}
+#endif
+
+
+#ifdef KEYBOARD_INTERFACE
 // Step #1, decode UTF8 to Unicode code points
 //
 void usb_keyboard_write(uint8_t c)
@@ -558,6 +576,7 @@ static uint8_t transmit_previous_timeout=0;
 // When the PC isn't listening, how long do we wait before discarding data?
 #define TX_TIMEOUT_MSEC 50
 
+// Shared transmit function used by both keyboard and keymedia
 static int usb_keyboard_transmit(int endpoint, const uint8_t *data, uint32_t len)
 {
 	if (!usb_configuration) return -1;
@@ -629,8 +648,58 @@ int usb_keyboard_send(void)
 	return usb_keyboard_transmit(KEYBOARD_ENDPOINT, buffer, KEYBOARD_SIZE);
 }
 
+#endif // KEYBOARD_INTERFACE (main keyboard functions section)
+
+
+// ============================================================================
+// KEYMEDIA INTERFACE SECTION
+// This section can be used standalone (without KEYBOARD_INTERFACE) or
+// together with KEYBOARD_INTERFACE
+// ============================================================================
 
 #ifdef KEYMEDIA_INTERFACE
+
+#ifndef KEYBOARD_INTERFACE
+// When keymedia is standalone, we need the transmit function here
+static uint8_t transmit_previous_timeout=0;
+#define TX_TIMEOUT_MSEC 50
+
+static int usb_keymedia_transmit(int endpoint, const uint8_t *data, uint32_t len)
+{
+	if (!usb_configuration) return -1;
+	uint32_t head = tx_head;
+	transfer_t *xfer = tx_transfer + head;
+	uint32_t wait_begin_at = systick_millis_count;
+	while (1) {
+		uint32_t status = usb_transfer_status(xfer);
+		if (!(status & 0x80)) {
+			if (status & 0x68) {
+				printf("ERROR status = %x, i=%d, ms=%u\n",
+					status, tx_head, systick_millis_count);
+			}
+			transmit_previous_timeout = 0;
+			break;
+		}
+		if (transmit_previous_timeout) return -1;
+		if (systick_millis_count - wait_begin_at > TX_TIMEOUT_MSEC) {
+			transmit_previous_timeout = 1;
+			return -1;
+		}
+		if (!usb_configuration) return -1;
+		yield();
+	}
+	delayNanoseconds(30);
+	uint8_t *buffer = txbuffer + head * TX_BUFSIZE;
+	memcpy(buffer, data, len);
+	usb_prepare_transfer(xfer, buffer, len, 0);
+	arm_dcache_flush_delete(buffer, TX_BUFSIZE);
+	usb_transmit(endpoint, xfer);
+	if (++head >= TX_NUM) head = 0;
+	tx_head = head;
+	return 0;
+}
+#define usb_keyboard_transmit usb_keymedia_transmit
+#endif // !KEYBOARD_INTERFACE
 
 static void usb_keymedia_press_consumer_key(uint16_t key)
 {
@@ -728,6 +797,17 @@ static int usb_keymedia_send(void)
 	return usb_keyboard_transmit(KEYMEDIA_ENDPOINT, buffer, KEYMEDIA_SIZE);
 }
 
+// Public API functions for standalone keymedia access
+void usb_keymedia_press_key(uint16_t key)
+{
+	usb_keymedia_press_consumer_key(key);
+}
+
+void usb_keymedia_release_key(uint16_t key)
+{
+	usb_keymedia_release_consumer_key(key);
+}
+
 #endif // KEYMEDIA_INTERFACE
 
-#endif // KEYBOARD_INTERFACE
+#endif // defined(KEYBOARD_INTERFACE) || defined(KEYMEDIA_INTERFACE)
