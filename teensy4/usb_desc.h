@@ -848,7 +848,8 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define CDC_TX_SIZE_480       512
   #define CDC_RX_SIZE_12        64
   #define CDC_TX_SIZE_12        64
-  #define AUDIO_INTERFACE	2	// Audio (uses 3 consecutive interfaces)
+  #define KEYMEDIA_INTERFACE    2	// Media Keys (appears before Audio in descriptor)
+  #define AUDIO_INTERFACE	3	// Audio (uses 3 consecutive interfaces: 3, 4, 5)
   #define AUDIO_TX_ENDPOINT     4
   #define AUDIO_TX_SIZE         180
   #define AUDIO_RX_ENDPOINT     4
@@ -858,7 +859,6 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define AUDIO_STATUS_SIZE     2
   #define AUDIO_STATUS_INTERVAL_HS 4
   #define AUDIO_STATUS_INTERVAL_FS 1
-  #define KEYMEDIA_INTERFACE    5	// Media Keys (for volume control on Windows)
   #define KEYMEDIA_ENDPOINT     7
   #define KEYMEDIA_SIZE         8
   #define KEYMEDIA_INTERVAL     4
