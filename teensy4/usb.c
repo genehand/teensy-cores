@@ -42,6 +42,7 @@
 #include "usb_midi.h"
 #include "usb_audio.h"
 #include "usb_mtp.h"
+#include "usb_host_os.h"
 #include "core_pins.h" // for delay()
 #include "avr/pgmspace.h"
 #include <string.h>
@@ -349,6 +350,7 @@ void usb_isr(void)
 		#if defined(CDC_STATUS_INTERFACE) && defined(CDC_DATA_INTERFACE)
 		usb_serial_reset();
 		#endif
+		usb_host_os_reset();
 		endpointN_notify_mask = 0;
 		// TODO: Free all allocated dTDs
 		//if (++reset_count >= 3) {
@@ -489,6 +491,9 @@ static void endpoint0_setup(uint64_t setupdata)
 		#if defined(KEYBOARD_INTERFACE)
 		usb_keyboard_configure();
 		#endif
+		#if defined(KEYMEDIA_INTERFACE) && !defined(KEYBOARD_INTERFACE)
+		usb_keymedia_configure();
+		#endif
 		#if defined(MOUSE_INTERFACE)
 		usb_mouse_configure();
 		#endif
@@ -568,6 +573,8 @@ static void endpoint0_setup(uint64_t setupdata)
 #endif
 	  case 0x0680: // GET_DESCRIPTOR
 	  case 0x0681:
+		// Track descriptor requests for host OS detection
+		usb_host_os_desc_request(setup.wValue >> 8);
 		for (list = usb_descriptor_list; list->addr != NULL; list++) {
 			if (setup.wValue == list->wValue && setup.wIndex == list->wIndex) {
 				uint32_t datalen;
