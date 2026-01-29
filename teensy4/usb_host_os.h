@@ -1,6 +1,6 @@
 /* Teensyduino Core Library
  * http://www.pjrc.com/teensy/
- * Copyright (c) 2017 PJRC.COM, LLC.
+ * Copyright (c) 2024 PJRC.COM, LLC.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -28,76 +28,42 @@
  * SOFTWARE.
  */
 
-#include <Arduino.h>
-#include "usb_desc.h"
+#pragma once
 
-#if F_CPU >= 20000000
+#include <stdint.h>
 
-#ifdef CDC_DATA_INTERFACE
-#ifdef CDC_STATUS_INTERFACE
-usb_serial_class Serial;
-#endif
-#endif
+// Host OS detection based on USB descriptor request order.
+// Different operating systems request descriptors in different orders after
+// the Device Descriptor:
+//
+//   Windows:  Config Desc -> BOS Desc
+//   Linux:    BOS Desc -> Config Desc
+//   macOS:    String Desc -> (BOS or Config)
+//
+// This heuristic is not 100% reliable but works for most common cases.
 
-#ifdef CDC2_DATA_INTERFACE
-#ifdef CDC2_STATUS_INTERFACE
-usb_serial2_class SerialUSB1;
-#endif
-#endif
-
-#ifdef CDC3_DATA_INTERFACE
-#ifdef CDC3_STATUS_INTERFACE
-usb_serial3_class SerialUSB2;
-#endif
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-#ifdef MIDI_INTERFACE
-usb_midi_class usbMIDI;
+typedef enum {
+	USB_HOST_OS_UNKNOWN = 0,
+	USB_HOST_OS_WINDOWS,
+	USB_HOST_OS_LINUX,
+	USB_HOST_OS_MACOS
+} usb_host_os_t;
+
+// Get the detected host operating system.
+// Returns USB_HOST_OS_UNKNOWN if detection hasn't completed yet
+// (not enough descriptor requests received).
+usb_host_os_t usb_host_os_get(void);
+
+// Reset the detection state. Called internally on USB reset.
+void usb_host_os_reset(void);
+
+// Record a descriptor request. Called internally from usb.c
+void usb_host_os_desc_request(uint8_t desc_type);
+
+#ifdef __cplusplus
+}
 #endif
-
-#ifdef KEYBOARD_INTERFACE
-usb_keyboard_class Keyboard;
-#endif
-
-#if defined(KEYMEDIA_INTERFACE) && !defined(KEYBOARD_INTERFACE)
-usb_keymedia_class KeyMedia;
-#endif
-
-#ifdef MOUSE_INTERFACE
-usb_mouse_class Mouse;
-#endif
-
-#ifdef RAWHID_INTERFACE
-usb_rawhid_class RawHID;
-#endif
-
-#ifdef FLIGHTSIM_INTERFACE
-FlightSimClass FlightSim;
-#endif
-
-#ifdef SEREMU_INTERFACE
-usb_seremu_class Serial;
-#endif
-
-#ifdef JOYSTICK_INTERFACE
-usb_joystick_class Joystick;
-uint8_t usb_joystick_class::manual_mode = 0;
-#endif
-
-#ifdef USB_DISABLED
-usb_serial_class Serial;
-#endif
-
-
-#else // F_CPU < 20 MHz
-
-#if defined(USB_SERIAL) || defined(USB_SERIAL_HID)
-usb_serial_class Serial;
-#elif (USB_DISABLED)
-usb_serial_class Serial;
-#else
-usb_seremu_class Serial;
-#endif
-
-#endif // F_CPU
-
