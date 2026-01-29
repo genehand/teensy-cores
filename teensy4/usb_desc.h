@@ -821,6 +821,54 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define ENDPOINT6_CONFIG	ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_ISOCHRONOUS
   #define ENDPOINT7_CONFIG	ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_INTERRUPT
 
+#elif defined(USB_AUDIO_SERIAL_KEYMEDIA)
+  // Serial + Audio + KeyMedia (no MIDI - use USB_MIDI_AUDIO_SERIAL for EQ configuration)
+  // This USB type provides:
+  //   - Full CDC Serial for debugging/communication
+  //   - USB Audio with status endpoint (works on macOS)
+  //   - KeyMedia HID for volume control (works on Windows)
+  // Use usb_host_os_get() to detect host OS and choose appropriate volume control method
+  #define VENDOR_ID		0x16C0
+  #define PRODUCT_ID		0x048C
+  #define MANUFACTURER_NAME	{'T','e','e','n','s','y','d','u','i','n','o'}
+  #define MANUFACTURER_NAME_LEN	11
+  #define PRODUCT_NAME		{'T','e','e','n','s','y',' ','A','u','d','i','o'}
+  #define PRODUCT_NAME_LEN	12
+  #define EP0_SIZE		64
+  #define NUM_ENDPOINTS         7
+  #define NUM_INTERFACE		6
+  #define CDC_IAD_DESCRIPTOR	1
+  #define CDC_STATUS_INTERFACE	0
+  #define CDC_DATA_INTERFACE	1	// Serial
+  #define CDC_ACM_ENDPOINT	2
+  #define CDC_RX_ENDPOINT       3
+  #define CDC_TX_ENDPOINT       3
+  #define CDC_ACM_SIZE          16
+  #define CDC_RX_SIZE_480       512
+  #define CDC_TX_SIZE_480       512
+  #define CDC_RX_SIZE_12        64
+  #define CDC_TX_SIZE_12        64
+  #define AUDIO_INTERFACE	2	// Audio (uses 3 consecutive interfaces)
+  #define AUDIO_TX_ENDPOINT     4
+  #define AUDIO_TX_SIZE         180
+  #define AUDIO_RX_ENDPOINT     4
+  #define AUDIO_RX_SIZE         180
+  #define AUDIO_SYNC_ENDPOINT	5
+  #define AUDIO_STATUS_ENDPOINT	6
+  #define AUDIO_STATUS_SIZE     2
+  #define AUDIO_STATUS_INTERVAL_HS 4
+  #define AUDIO_STATUS_INTERVAL_FS 1
+  #define KEYMEDIA_INTERFACE    5	// Media Keys (for volume control on Windows)
+  #define KEYMEDIA_ENDPOINT     7
+  #define KEYMEDIA_SIZE         8
+  #define KEYMEDIA_INTERVAL     4
+  #define ENDPOINT2_CONFIG	ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_INTERRUPT
+  #define ENDPOINT3_CONFIG	ENDPOINT_RECEIVE_BULK + ENDPOINT_TRANSMIT_BULK
+  #define ENDPOINT4_CONFIG	ENDPOINT_RECEIVE_ISOCHRONOUS + ENDPOINT_TRANSMIT_ISOCHRONOUS
+  #define ENDPOINT5_CONFIG	ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_ISOCHRONOUS
+  #define ENDPOINT6_CONFIG	ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_INTERRUPT
+  #define ENDPOINT7_CONFIG	ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_INTERRUPT
+
 #elif defined(USB_MIDI16_AUDIO_SERIAL)
   #define VENDOR_ID		0x16C0
   #define PRODUCT_ID		0x048A
