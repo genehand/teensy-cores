@@ -312,7 +312,11 @@ uint16_t AudioOutputUSB::offset_1st;
 static void tx_event(transfer_t *t)
 {
 	int len = usb_audio_transmit_callback();
-	usb_audio_sync_feedback = feedback_accumulator >> usb_audio_sync_rshift;
+
+	// usb_audio_sync_feedback = feedback_accumulator >> usb_audio_sync_rshift;
+	// Feedback is updated in sync_event() for receive (input)
+	// Output does not need explicit feedback update here
+
 	usb_prepare_transfer(&tx_transfer, usb_audio_transmit_buffer, len, 0);
 	arm_dcache_flush_delete(usb_audio_transmit_buffer, len);
 	usb_transmit(AUDIO_TX_ENDPOINT, &tx_transfer);
@@ -548,8 +552,6 @@ int usb_audio_set_feature(void *stp, uint8_t *buf)
 	}
 	return 0;
 }
-
-// static uint32_t last_volume_notify = 0;
 
 void setUSBAudioVolume(int8_t change) {
     int volume = AudioInputUSB::features.volume;
