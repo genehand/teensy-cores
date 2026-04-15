@@ -39,18 +39,13 @@ make clean             # Remove build artifacts
 
 ### Compiler Details
 
-- **Toolchain:** arm-none-eabi-gcc/g++
-- **C++ Standard:** gnu++17
+- **Toolchain:** arm-none-eabi-gcc/g++ (gnu++17)
 - **Teensy 3.x:** `-Os -mcpu=cortex-m4 -mthumb`
 - **Teensy 4.x:** `-O2 -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-d16`
 
-### No Automated Testing
+### No Automated Testing or Linting
 
-**Important:** This project has no unit testing framework. Testing is performed manually on physical hardware. Do not attempt to create or run automated tests.
-
-### No Linting/Formatting Tools
-
-**Important:** This project does not use clang-format, clang-tidy, or similar tools. Follow the observed code style patterns instead.
+**Important:** No unit tests, no clang-format/clang-tidy. Test manually on hardware. Follow existing code style patterns.
 
 ## Code Style Guidelines
 
@@ -97,23 +92,9 @@ make clean             # Remove build artifacts
 
 ### Comments and Documentation
 
-- **File headers:** Block comments with copyright notice (PJRC.COM, LLC)
-- **Required license header:** Include custom license text in all new files (see existing files)
-- **Inline comments:** `//` for single-line comments
-- **Block comments:** `/* */` for multi-line explanations
+- **File headers:** Required PJRC license header (see existing files for template)
+- **Inline comments:** `//` for single-line, `/* */` for multi-line
 - **API documentation:** Brief inline comments above function declarations
-
-Example license header:
-```cpp
-/* Teensyduino Core Library
- * http://www.pjrc.com/teensy/
- * Copyright (c) 2024 PJRC.COM, LLC.
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction...
- */
-```
 
 ### Types
 
@@ -168,7 +149,6 @@ Use conditional compilation for platform differences:
 ### Git and GitHub
 
 - **Issues:** Only for specific bug reports, not general troubleshooting
-- **Forum first:** Discuss features on PJRC forum before opening GitHub issues
 - **Commit messages:** Clear, concise descriptions of changes
 - **Upstream:** This is a fork of https://github.com/PaulStoffregen/cores
 
@@ -181,23 +161,28 @@ Use conditional compilation for platform differences:
 
 ## Common Patterns
 
-### USB Device Implementations
+### USB and Hardware Abstraction
 
-Each USB device type (serial, MIDI, HID) has its own directory:
-- `usb_api.cpp` - High-level API
-- `usb_*.c` - Low-level USB descriptors and handlers
-
-### Hardware Abstraction
-
-- `core_pins.h` - Pin definitions and macros
-- `HardwareSerial.cpp` - UART wrappers
-- Direct register access via `imxrt.h` (Teensy 4) or MCU-specific headers
+- USB devices: `usb_api.cpp` (high-level), `usb_*.c` (low-level descriptors)
+- Hardware: `core_pins.h` (pins), direct register access via `imxrt.h`
 
 ### Interrupt Handling
 
 - Functions used in ISRs should be fast and minimal
 - Use `__attribute__((interrupt))` where appropriate
 - Avoid function calls from ISRs when possible
+
+### USB Audio Feedback Pitfalls
+
+When working with USB Audio feedback endpoints (`AUDIO_SYNC_ENDPOINT`):
+
+1. **Single Source of Truth**: Update `usb_audio_sync_feedback` in ONLY ONE callback. In `teensy4/usb_audio.cpp`, only `sync_event()` should update this variable - NOT in `tx_event()` or other callbacks. Redundant updates cause timing jitter and macOS `usbaudiod calcError` warnings.
+
+2. **Keep sync_event() Minimal**: It fires every 125µs (USB microframe rate). Just read `feedback_accumulator` and re-queue the transfer. Extra work (timing calculations, logging) causes jitter.
+
+3. **Don't Over-Engineer**: The original direct feedback is well-tuned for macOS. Attempted improvements (rate-limiting, smoothing, DWT timing) all made calcError warnings worse or caused audio distortion.
+
+4. **Testing**: Test on actual macOS hardware. `usbaudiod` calcError warnings of 100-1500 ns are normal - actual audio quality is what matters.
 
 ## Reference Resources
 
