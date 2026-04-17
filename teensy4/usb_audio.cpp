@@ -40,6 +40,8 @@ audio_block_t * AudioInputUSB::incoming_left;
 audio_block_t * AudioInputUSB::incoming_right;
 audio_block_t * AudioInputUSB::ready_left;
 audio_block_t * AudioInputUSB::ready_right;
+audio_block_t * AudioInputUSB::ready2_left;
+audio_block_t * AudioInputUSB::ready2_right;
 uint16_t AudioInputUSB::incoming_count;
 uint8_t AudioInputUSB::receive_flag;
 
@@ -132,6 +134,8 @@ void AudioInputUSB::begin(void)
 	incoming_right = NULL;
 	ready_left = NULL;
 	ready_right = NULL;
+	ready2_left = NULL;
+	ready2_right = NULL;
 	receive_flag = 0;
 	// update_responsibility = update_setup();
 	// TODO: update responsibility is tough, partly because the USB
@@ -204,18 +208,24 @@ void usb_audio_receive_callback(unsigned int len)
 			data += avail;
 			len -= avail;
 			if (AudioInputUSB::ready_left || AudioInputUSB::ready_right) {
-				// buffer overrun, PC sending too fast
-				AudioInputUSB::incoming_count = count + avail;
-				if (len > 0) {
-					usb_audio_overrun_count++;
-					printf("!");
-					//serial_phex(len);
+				if (AudioInputUSB::ready2_left || AudioInputUSB::ready2_right) {
+					// both ready slots full - real overrun
+					AudioInputUSB::incoming_count = count + avail;
+					if (len > 0) {
+						usb_audio_overrun_count++;
+						printf("!");
+					}
+					return;
 				}
-				return;
 			}
 			send:
-			AudioInputUSB::ready_left = left;
-			AudioInputUSB::ready_right = right;
+			if (!(AudioInputUSB::ready_left || AudioInputUSB::ready_right)) {
+				AudioInputUSB::ready_left = left;
+				AudioInputUSB::ready_right = right;
+			} else {
+				AudioInputUSB::ready2_left = left;
+				AudioInputUSB::ready2_right = right;
+			}
 			//if (AudioInputUSB::update_responsibility) AudioStream::update_all();
 			left = AudioStream::allocate();
 			if (left == NULL) {
@@ -236,7 +246,8 @@ void usb_audio_receive_callback(unsigned int len)
 			AudioInputUSB::incoming_right = right;
 			count = 0;
 		} else {
-			if (AudioInputUSB::ready_left || AudioInputUSB::ready_right) return;
+			if ((AudioInputUSB::ready_left || AudioInputUSB::ready_right)
+			    && (AudioInputUSB::ready2_left || AudioInputUSB::ready2_right)) return;
 			goto send; // recover from buffer overrun
 		}
 	}
@@ -250,16 +261,20 @@ void AudioInputUSB::update(void)
 
 	__disable_irq();
 	left = ready_left;
-	ready_left = NULL;
+	ready_left = ready2_left;
+	ready2_left = NULL;
 	right = ready_right;
-	ready_right = NULL;
+	ready_right = ready2_right;
+	ready2_right = NULL;
 	uint16_t c = incoming_count;
 	uint8_t f = receive_flag;
 	receive_flag = 0;
+	// If ready2 was occupied, host is sending faster than we consume
+	// (overruns are benign — 2-deep buffer absorbs them gracefully)
 	__enable_irq();
 	if (f) {
 		int diff = AUDIO_BLOCK_SAMPLES/2 - (int)c;
-		feedback_accumulator += diff * 1;
+		feedback_accumulator += diff * 8;
 		//uint32_t feedback = (feedback_accumulator >> 8) + diff * 100;
 		//usb_audio_sync_feedback = feedback;
 
@@ -270,7 +285,7 @@ void AudioInputUSB::update(void)
 	if (!left || !right) {
 		usb_audio_underrun_count++;
 		//printf("#"); // buffer underrun - PC sending too slow
-		if (f) feedback_accumulator += 3500;
+		feedback_accumulator += 3500;
 	}
 	if (left) {
 		transmit(left, 0);
