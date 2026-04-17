@@ -103,6 +103,8 @@ private:
 	static audio_block_t *incoming_right;
 	static audio_block_t *ready_left;
 	static audio_block_t *ready_right;
+	static audio_block_t *ready2_left;
+	static audio_block_t *ready2_right;
 	static uint16_t incoming_count;
 	static uint8_t receive_flag;
 };
