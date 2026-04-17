@@ -180,9 +180,11 @@ When working with USB Audio feedback endpoints (`AUDIO_SYNC_ENDPOINT`):
 
 2. **Keep sync_event() Minimal**: It fires every 125µs (USB microframe rate). Just read `feedback_accumulator` and re-queue the transfer. Extra work (timing calculations, logging) causes jitter.
 
-3. **Don't Over-Engineer**: The original direct feedback is well-tuned for macOS. Attempted improvements (rate-limiting, smoothing, DWT timing) all made calcError warnings worse or caused audio distortion.
+3. **Buffer Depth Matters**: A 2-deep buffer (`ready_left` + `ready2_left`) absorbs brief overruns gracefully without audio glitches. Single-buffer designs drop data on any timing mismatch.
 
-4. **Testing**: Test on actual macOS hardware. `usbaudiod` calcError warnings of 100-1500 ns are normal - actual audio quality is what matters.
+4. **Feedback Gain**: Higher gain (`diff * 8` vs `* 1`) responds faster to clock drift. The underrun correction (3500) should always apply, not be conditional.
+
+5. **Testing**: Test on actual macOS hardware. `usbaudiod` calcError warnings of 100-1500 ns are normal - actual audio quality is what matters.
 
 ## Reference Resources
 
